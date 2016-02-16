@@ -65,7 +65,6 @@ class auth_plugin_authucenter extends DokuWiki_Auth_Plugin {
      */
     public function trustExternal($user, $pass, $sticky = false) {
         global $USERINFO;
-        global $conf;
         $sticky ? $sticky = true : $sticky = false; //sanity check
 
         // do the checking here
@@ -82,9 +81,13 @@ class auth_plugin_authucenter extends DokuWiki_Auth_Plugin {
             if($uid > 0){
                 $_SERVER['REMOTE_USER'] = $username;
                 $user_info = $this->_uc_get_user_full($uid, 1);
+                $password = $user_info['password'];
                 $this->_uc_setcookie('DW_UCENTER_AUTH', uc_authcode($uid."\t".$user_info['password']."\t".$this->_convert_charset($username), 'ENCODE'));
                 uc_user_synlogin($uid);
                 $checked = true;
+            }else{
+                msg($this->getLang('loginfail'), -1);
+                $checked = false;
             }
         }else{
             $cookie = $_COOKIE['DW_UCENTER_AUTH'];
@@ -118,7 +121,7 @@ class auth_plugin_authucenter extends DokuWiki_Auth_Plugin {
         if($checked == true){
             $USERINFO['name'] = $user;
             $USERINFO['mail'] = $email;
-            $USERINFO['grps'] = array('FIXME');
+            $USERINFO['grps'] = array('user');
             $_SERVER['REMOTE_USER'] = $user;
             $_SESSION[DOKU_COOKIE]['auth']['user'] = $user;
             $_SESSION[DOKU_COOKIE]['auth']['pass'] = $pass;
@@ -138,7 +141,6 @@ class auth_plugin_authucenter extends DokuWiki_Auth_Plugin {
      * @return  bool
      */
     public function checkPass($user, $pass) {
-        // FIXME implement password check
         return $this->_uc_user_login($user, $pass); // return true if okay
     }
 

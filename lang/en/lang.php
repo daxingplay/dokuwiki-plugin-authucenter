@@ -17,5 +17,6 @@ $lang['emailforbidden'] = 'this email address is forbidden.';
 $lang['emailregistered'] = 'this email address is already registered.';
 $lang['userprotected'] = 'this user cannot be modified.';
 $lang['logoutsuccess'] = 'logout success.';
+$lang['loginfail'] = 'login fail. please check your username and password.';
 
 //Setup VIM: ex: et ts=4 :
