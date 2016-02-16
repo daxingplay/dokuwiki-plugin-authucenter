@@ -411,7 +411,7 @@ class auth_plugin_authucenter extends DokuWiki_Auth_Plugin {
      */
     private function _convert_charset($str, $out = 1){
         if($this->getConf('uccharset') != 'utf-8'){
-            $str = $out ? iconv('utf-8', $this->cnf['charset'], $str) : iconv($this->cnf['charset'], 'utf-8', $str);
+            $str = $out ? iconv('utf-8', $this->getConf('uccharset'), $str) : iconv($this->getConf('uccharset'), 'utf-8', $str);
         }
         return $str;
     }
@@ -491,7 +491,7 @@ class auth_plugin_authucenter extends DokuWiki_Auth_Plugin {
             return array(
                 'uid' => $status['uid'],
                 'username' => $status['username'],
-//                'grps' => $this->_get_user_group($status['uid'], 1),
+                'grps' => $this->_get_user_group($status['uid'], 1),
                 'password' => $status['password'],
                 'email' => $status['email'],
                 'regip' => $status['regip'],
