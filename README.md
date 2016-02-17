@@ -2,6 +2,8 @@
 
 DokuWiki plugin providing authentication against a Discuz with UCenter backend
 
+[![Join the chat at https://gitter.im/daxingplay/dokuwiki-plugin-authucenter](https://badges.gitter.im/daxingplay/dokuwiki-plugin-authucenter.svg)](https://gitter.im/daxingplay/dokuwiki-plugin-authucenter?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 ## Compatibility
 
 This plugin has been developped and tested with DokuWiki release 2015-08-10a ”Detritus”, but will probably also work with 2013-05-10 “Weatherwax” and later.
