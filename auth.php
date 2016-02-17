@@ -8,9 +8,7 @@
 
 // must be run within Dokuwiki
 if(!defined('DOKU_INC')) die();
-
-require_once(DOKU_INC.'conf/uc.auth.php'); //TODO generate this conf.
-require_once(DOKU_INC.'uc_client/client.php');
+if(!defined('DOKU_PLUGIN_AUTHUCENTER_INC')) define('DOKU_PLUGIN_AUTHUCENTER_INC', dirname(__FILE__).'/');
 
 class auth_plugin_authucenter extends DokuWiki_Auth_Plugin {
 
@@ -21,11 +19,29 @@ class auth_plugin_authucenter extends DokuWiki_Auth_Plugin {
     public function __construct() {
         parent::__construct(); // for compatibility
 
-        if (!file_exists(DOKU_INC . 'api/uc.php') || !is_dir(DOKU_INC . 'uc_client') || !file_exists(DOKU_INC . 'conf/uc.auth.php')) {
+        if (!is_dir(DOKU_INC . 'uc_client')) {
+            $this->_recurse_copy(DOKU_PLUGIN_AUTHUCENTER_INC . 'lib/uc_client', DOKU_INC);
+        }
+
+        if (!file_exists(DOKU_INC . 'api/uc.php')) {
+            $this->_recurse_copy(DOKU_PLUGIN_AUTHUCENTER_INC . 'lib/api', DOKU_INC);
+        }
+
+        if (!file_exists(DOKU_INC . 'conf/uc.auth.php') || $this->getConf('regenerateconfig')) {
+            if ($this->_generate_conf() === false) {
+                $this->success = false;
+                return;
+            }
+        }
+
+        if (!file_exists(DOKU_INC . 'api/uc.php') || !is_dir(DOKU_INC . 'uc_client') || !file_exists(DOKU_INC . 'conf/uc.auth.php') || !file_exists(DOKU_INC . 'uc_client/client.php')) {
             msg($this->getLang('ucfilecheckfail'), -1);
             $this->success = false;
             return;
         }
+
+        require_once(DOKU_INC.'conf/uc.auth.php');
+        require_once(DOKU_INC.'uc_client/client.php');
 
         // FIXME set capabilities accordingly
         $this->cando['addUser']     = false; // can Users be created?
@@ -50,7 +66,7 @@ class auth_plugin_authucenter extends DokuWiki_Auth_Plugin {
      * Log off the current user [ OPTIONAL ]
      */
     public function logOff() {
-        $this->_uc_setcookie('DW_UCENTER_AUTH', '', -1);
+        $this->_uc_setcookie($this->getConf('cookiename'), '', -1);
         uc_user_synlogout();
         msg($this->getLang('logoutsuccess'), 0);
     }
@@ -77,12 +93,12 @@ class auth_plugin_authucenter extends DokuWiki_Auth_Plugin {
 
         if(!empty($user)){
             list($uid, $username, $password, $email) = $this->_uc_user_login($user, $pass);
-            setcookie('DW_UCENTER_AUTH', '', -86400);
+            setcookie($this->getConf('cookiename'), '', -86400);
             if($uid > 0){
                 $_SERVER['REMOTE_USER'] = $username;
                 $user_info = $this->_uc_get_user_full($uid, 1);
                 $password = $user_info['password'];
-                $this->_uc_setcookie('DW_UCENTER_AUTH', uc_authcode($uid."\t".$user_info['password']."\t".$this->_convert_charset($username), 'ENCODE'));
+                $this->_uc_setcookie($this->getConf('cookiename'), uc_authcode($uid."\t".$user_info['password']."\t".$this->_convert_charset($username), 'ENCODE'));
                 uc_user_synlogin($uid);
                 $checked = true;
             }else{
@@ -90,7 +106,7 @@ class auth_plugin_authucenter extends DokuWiki_Auth_Plugin {
                 $checked = false;
             }
         }else{
-            $cookie = $_COOKIE['DW_UCENTER_AUTH'];
+            $cookie = $_COOKIE[$this->getConf('cookiename')];
             if(!empty($cookie)){
                 // use password check instead of username check.
                 list($uid, $password, $username) = explode("\t", uc_authcode($cookie, 'DECODE'));
@@ -502,6 +518,46 @@ class auth_plugin_authucenter extends DokuWiki_Auth_Plugin {
         } else {
             return 0;
         }
+    }
+
+    private function _recurse_copy($src,$dst) {
+        $dir = opendir($src);
+        @mkdir($dst);
+        while(false !== ( $file = readdir($dir)) ) {
+            if (( $file != '.' ) && ( $file != '..' )) {
+                if ( is_dir($src . '/' . $file) ) {
+                    $this->_recurse_copy($src . '/' . $file,$dst . '/' . $file);
+                }
+                else {
+                    copy($src . '/' . $file,$dst . '/' . $file);
+                }
+            }
+        }
+        closedir($dir);
+    }
+
+    /**
+     * generate DOKU_INC/conf/uc.auth.php config according to user config in Admin Settings.
+     * @return bool
+     */
+    private function _generate_conf() {
+        $uc_conf = '<?php' . "\n\n" . $this->getConf('ucappconfig'). "\n\n";
+        $conf_keys = array('COOKIE_PATH', 'COOKIE_DOMAIN', 'COOKIE_NAME');
+        foreach($conf_keys as $conf_name){
+            $conf_value = $this->getConf(str_replace('_', '', strtolower($conf_name)));
+            $uc_conf .= "define('DW_UC_$conf_name', '$conf_value');". "\n\n";
+        }
+        $uc_conf .= "\n\n" . '?>';
+        $handle = fopen(DOKU_INC . 'conf/uc.auth.php', 'w');
+        if ($handle === false) {
+            msg($this->getLang('openucconfigfail'), -1);
+            return false;
+        }
+        if (fwrite($handle, $uc_conf) === false) {
+            msg($this->getLang('writeucconfigfail'), -1);
+            return false;
+        }
+        return fclose($handle);
     }
 }
 

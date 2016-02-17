@@ -18,5 +18,7 @@ $lang['emailregistered'] = 'this email address is already registered.';
 $lang['userprotected'] = 'this user cannot be modified.';
 $lang['logoutsuccess'] = 'logout success.';
 $lang['loginfail'] = 'login fail. please check your username and password.';
+$lang['writeucconfigfail'] = 'cannot write to file conf/uc.auth.php';
+$lang['openucconfigfail'] = 'cannot open file conf/uc.auth.php';
 
 //Setup VIM: ex: et ts=4 :
